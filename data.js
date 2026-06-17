@@ -38,7 +38,18 @@ const STATIONS = {
         }
       ],
       watch: "Same direction = cross platform. Direction change = change levels."
-    }
+    },
+    // Pending real-world data: walk time and any wayfinding notes for the
+    // Sukhumvit <-> Silom connection itself (separate from the platform-level
+    // logic above, which is already confirmed). Fill in as you collect it.
+    lineConnections: [
+      {
+        toLine: "Silom Line",
+        fareGateType: "same-system",
+        walkMinutes: null,
+        notes: "Pending field data — confirm whether any walk is needed beyond the platform-level change described above."
+      }
+    ]
   },
   chitlom: {
     name: "Chit Lom",
@@ -241,6 +252,25 @@ const STATIONS = {
     ],
     skywalk: false,
     skywalkNote: "Quiet residential station in Samut Prakan, street-level access only."
+  },
+  // Not on the Sukhumvit Line — included here so it has a full station object
+  // ready for journey cards once Silom/Gold routing exists. Exit numbers and
+  // skywalk detail are intentionally left out until you've walked it.
+  krungthonburi: {
+    name: "Krung Thon Buri",
+    code: "S7 / G1",
+    line: "Silom + Gold (Interchange)",
+    exits: [],
+    skywalk: null,
+    skywalkNote: "Pending field data — exit numbers and skywalk coverage not yet confirmed.",
+    lineConnections: [
+      {
+        toLine: "Gold Line",
+        fareGateType: "separate-fare-area",
+        walkMinutes: null,
+        notes: "Confirmed: separate fare area. Rabbit card works for both systems but you tap in again. Without Rabbit, buy a single-journey Gold Line ticket before the Gold Line gates. Exact walk time and exit numbers still pending."
+      }
+    ]
   }
 };
 
