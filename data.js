@@ -391,3 +391,87 @@ window.STATIONS = STATIONS;
 window.LINE_ORDER = LINE_ORDER;
 window.SEGMENTS = SEGMENTS;
 window.getRoute = getRoute;
+
+// ===== TEST ROUTE: multi-segment journey with line transfers =====
+// Isolated from the single-line engine above — used only to prototype
+// transfer behavior across Sukhumvit -> Silom -> Gold lines.
+// Bang Na (E13) -> Siam (CEN) -> Krung Thon Buri (S7/G1) -> Charoen Nakhon (G2)
+
+const TEST_ROUTE_MULTI = {
+  label: "Bang Na → Charoen Nakhon (test)",
+  finalDestination: "Charoen Nakhon",
+  segments: [
+    {
+      lineName: "Sukhumvit Line",
+      lineColor: "#1ba94c",
+      startStation: "Bang Na",
+      startCode: "E13",
+      endStation: "Siam",
+      endCode: "CEN",
+      direction: "Toward Mo Chit / Khu Khot",
+      stations: [
+        "Bang Na", "Udom Suk", "Punnawithi", "Bang Chak", "On Nut",
+        "Phra Khanong", "Ekkamai", "Thong Lo", "Phrom Phong", "Asok",
+        "Nana", "Phloen Chit", "Chit Lom", "Siam"
+      ],
+      arrivalNote: "Siam has covered skywalks into Paragon, Siam Discovery, and Central World — but you're transferring lines here, not exiting.",
+      transferTo: {
+        kind: "siamInterchange",
+        title: "Transfer to Silom Line",
+        fromLine: "Sukhumvit Line",
+        toLine: "Silom Line",
+        steps: [
+          "At Siam, level = direction, not line",
+          "Find the Silom Line platform",
+          "Board Silom Line toward Bang Wa"
+        ],
+        warningChip: "Level = direction, not line",
+        note: "Same direction (e.g. both northbound) is a simple cross-platform move. Switching direction means changing levels via the central stairs — you cannot just cross the platform."
+      }
+    },
+    {
+      lineName: "Silom Line",
+      lineColor: "#1ba94c",
+      startStation: "Siam",
+      startCode: "CEN",
+      endStation: "Krung Thon Buri",
+      endCode: "S7",
+      direction: "Toward Bang Wa",
+      stations: [
+        "Siam", "Ratchadamri", "Sala Daeng", "Chong Nonsi", "Saint Louis",
+        "Surasak", "Saphan Taksin", "Krung Thon Buri"
+      ],
+      arrivalNote: "Krung Thon Buri connects to the Gold Line, but it's a separate fare area — this is not a same-platform transfer.",
+      transferTo: {
+        kind: "goldLineTransfer",
+        title: "Transfer to Gold Line",
+        fromLine: "BTS Silom Line",
+        toLine: "Gold Line",
+        warningChip: "Separate fare area",
+        steps: [
+          "Exit BTS Silom Line gates",
+          "Follow signs / skywalk to Gold Line",
+          "Tap Rabbit card or buy Gold Line ticket",
+          "Board toward Khlong San"
+        ],
+        note: "Rabbit card works. Without Rabbit, buy a single-journey ticket before the Gold Line gates."
+      }
+    },
+    {
+      lineName: "Gold Line",
+      lineColor: "#f2a900",
+      startStation: "Krung Thon Buri",
+      startCode: "G1",
+      endStation: "Charoen Nakhon",
+      endCode: "G2",
+      direction: "Toward Khlong San",
+      stations: ["Krung Thon Buri", "Charoen Nakhon"],
+      arrivalNote: "Use the exit for ICONSIAM / Charoen Nakhon. You have arrived.",
+      finalArrival: {
+        exitNote: "Use exit for ICONSIAM / Charoen Nakhon"
+      }
+    }
+  ]
+};
+
+window.TEST_ROUTE_MULTI = TEST_ROUTE_MULTI;
