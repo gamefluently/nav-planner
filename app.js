@@ -1,43 +1,54 @@
 const goBtn = document.getElementById('goBtn');
 const results = document.getElementById('results');
 const lineStrip = document.getElementById('lineStrip');
-const fromSelect = document.getElementById('fromSelect');
-const toSelect = document.getElementById('toSelect');
 const swapBtn = document.getElementById('swapBtn');
+const fromField = document.getElementById('fromField');
+const toField = document.getElementById('toField');
+const fromFieldValue = document.getElementById('fromFieldValue');
+const toFieldValue = document.getElementById('toFieldValue');
+const pickerModal = document.getElementById('pickerModal');
+const pickerSearchInput = document.getElementById('pickerSearchInput');
+const pickerModalResults = document.getElementById('pickerModalResults');
+const pickerModalClose = document.getElementById('pickerModalClose');
 
-function populateSelects() {
-  LINE_ORDER.forEach(key => {
-    const station = STATIONS[key];
-    const label = `${station.code} · ${station.name}`;
+// Selected station ids (ALL_STATIONS .id, shared across line entries for
+// transfer stations). Defaults match the app's original Nana -> Siam demo.
+let selectedFrom = 'nana';
+let selectedTo = 'siam';
+let activeField = null; // 'from' | 'to' while the modal is open
 
-    const opt1 = document.createElement('option');
-    opt1.value = key;
-    opt1.textContent = label;
-    fromSelect.appendChild(opt1);
+function findStationById(id) {
+  // ALL_STATIONS has one entry per line for transfer stations; any of them
+  // carries the right name/code for display purposes.
+  return ALL_STATIONS.find(s => s.id === id);
+}
 
-    const opt2 = document.createElement('option');
-    opt2.value = key;
-    opt2.textContent = label;
-    toSelect.appendChild(opt2);
-  });
-  fromSelect.value = 'nana';
-  toSelect.value = 'siam';
+function updateFieldDisplays() {
+  const fromStation = findStationById(selectedFrom);
+  const toStation = findStationById(selectedTo);
+  fromFieldValue.textContent = fromStation ? `${fromStation.code} · ${fromStation.name}` : 'Select station';
+  fromFieldValue.className = `picker-field-value ${fromStation ? '' : 'placeholder'}`;
+  toFieldValue.textContent = toStation ? `${toStation.code} · ${toStation.name}` : 'Select station';
+  toFieldValue.className = `picker-field-value ${toStation ? '' : 'placeholder'}`;
 }
 
 function renderLineStrip() {
-  const fromKey = fromSelect.value;
-  const toKey = toSelect.value;
-  const fromIdx = LINE_ORDER.indexOf(fromKey);
-  const toIdx = LINE_ORDER.indexOf(toKey);
-  const lo = Math.min(fromIdx, toIdx);
-  const hi = Math.max(fromIdx, toIdx);
+  // The line strip still only reflects the real Sukhumvit routing engine.
+  // If either pick falls outside it (Silom/Gold), show the full line with
+  // nothing highlighted rather than breaking — routing across lines isn't
+  // built yet, this is just the picker's data layer landing first.
+  const fromIdx = LINE_ORDER.indexOf(selectedFrom);
+  const toIdx = LINE_ORDER.indexOf(selectedTo);
+  const bothOnSukhumvit = fromIdx > -1 && toIdx > -1;
+  const lo = bothOnSukhumvit ? Math.min(fromIdx, toIdx) : -1;
+  const hi = bothOnSukhumvit ? Math.max(fromIdx, toIdx) : -1;
 
   lineStrip.innerHTML = LINE_ORDER.map((key, idx) => {
     const s = STATIONS[key];
     const isInterchange = !!s.interchange;
-    const isSelected = key === fromKey || key === toKey;
-    const onRoute = idx >= lo && idx <= hi;
-    const trackInRange = idx > lo && idx <= hi;
+    const isSelected = key === selectedFrom || key === selectedTo;
+    const onRoute = lo > -1 && idx >= lo && idx <= hi;
+    const trackInRange = lo > -1 && idx > lo && idx <= hi;
 
     return `
       <div class="strip-stop ${isInterchange ? 'interchange' : ''} ${isSelected ? 'selected' : ''} ${onRoute ? 'on-route' : ''}">
@@ -59,6 +70,89 @@ function renderEmpty() {
   `;
 }
 
+// ===== Searchable station picker modal =====
+
+function openPickerModal(field) {
+  activeField = field;
+  pickerSearchInput.value = '';
+  pickerModal.classList.remove('hidden');
+  renderPickerResults('');
+  // Focus after the modal is visible so mobile keyboards behave.
+  setTimeout(() => pickerSearchInput.focus(), 50);
+}
+
+function closePickerModal() {
+  pickerModal.classList.add('hidden');
+  activeField = null;
+}
+
+function matchesQuery(station, query) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return (
+    station.name.toLowerCase().includes(q) ||
+    station.code.toLowerCase().includes(q) ||
+    station.line.toLowerCase().includes(q) ||
+    (station.nameTh && station.nameTh.toLowerCase().includes(q))
+  );
+}
+
+function lineCssClass(line) {
+  if (line === 'Silom Line') return 'line-silom';
+  if (line === 'Gold Line') return 'line-gold';
+  return 'line-sukhumvit';
+}
+
+function renderPickerResults(query) {
+  const filtered = ALL_STATIONS.filter(s => matchesQuery(s, query));
+
+  if (filtered.length === 0) {
+    pickerModalResults.innerHTML = `<div class="picker-no-results">No stations match "${query}"</div>`;
+    return;
+  }
+
+  let html = '';
+  LINE_ORDER_DISPLAY.forEach(lineName => {
+    const lineStations = filtered.filter(s => s.line === lineName);
+    if (!lineStations.length) return;
+
+    html += `<div class="picker-group-label">${lineName}</div>`;
+    lineStations.forEach(s => {
+      html += `
+        <div class="picker-station-row" data-id="${s.id}">
+          <span class="picker-code-badge ${lineCssClass(s.line)}">${s.code}</span>
+          <span class="picker-station-name">${s.name}</span>
+          <div class="picker-line-badges">
+            <span class="picker-line-badge">${s.line}</span>
+            ${s.transfer ? `<span class="picker-transfer-badge">⇄ ${s.transfer}</span>` : ''}
+          </div>
+        </div>
+      `;
+    });
+  });
+
+  pickerModalResults.innerHTML = html;
+
+  pickerModalResults.querySelectorAll('.picker-station-row').forEach(row => {
+    row.addEventListener('click', () => {
+      selectStation(row.dataset.id);
+    });
+  });
+}
+
+function selectStation(id) {
+  if (activeField === 'from') {
+    selectedFrom = id;
+  } else if (activeField === 'to') {
+    selectedTo = id;
+  }
+  closePickerModal();
+  updateFieldDisplays();
+  renderLineStrip();
+  results.innerHTML = '';
+  renderEmpty();
+}
+
 // ===== Journey mode: converts a route into a sequence of full-screen cards,
 // one action at a time, navigable with Next/Previous — like turn-by-turn guidance.
 
@@ -74,7 +168,6 @@ const rideSubstepper = document.getElementById('rideSubstepper');
 const ridePrevBtn = document.getElementById('ridePrevBtn');
 const rideNextBtn = document.getElementById('rideNextBtn');
 const rideArriveBtn = document.getElementById('rideArriveBtn');
-const testRouteBtn = document.getElementById('testRouteBtn');
 
 let journeyCards = [];
 let journeyIndex = 0;
@@ -91,23 +184,9 @@ function renderRideCard(card) {
   const currentName = stations[rideStationIndex];
   const nextName = stations[rideStationIndex + 1] || null;
   const destName = stations[destIdx];
-  const isMultiSegment = !!card.rideLineName;
 
   // Arrival state takes over the whole card once we reach the destination.
   if (rideArrived) {
-    // Final segment of a multi-segment test route gets the true final-arrival card.
-    if (isMultiSegment && card.rideIsFinalSegment) {
-      const exitNote = card.rideFinalArrival ? card.rideFinalArrival.exitNote : 'Check exits';
-      return `
-        <div class="jc-icon">🛑</div>
-        <div class="jc-title" style="color:var(--green);">GET OFF NOW</div>
-        <div class="ride-arrival-row">
-          <div class="ride-arrival-chip">${exitNote}</div>
-        </div>
-        <div class="jc-detail" style="margin-top:14px;">You have arrived at <strong style="color:var(--text);">${destName}</strong>.</div>
-      `;
-    }
-
     const exitsCard = journeyCards.find(c => c.kind === 'exits');
     const firstExit = exitsCard && exitsCard.exits && exitsCard.exits[0];
     return `
@@ -159,7 +238,7 @@ function renderRideCard(card) {
   const nearArrival = stopsRemaining === 1;
 
   return `
-    ${isMultiSegment ? `<div class="ride-direction">${card.rideLineName} · ${card.rideDirection}</div>` : `<div class="ride-direction">${card.rideDirection}</div>`}
+    <div class="ride-direction">${card.rideDirection}</div>
     <div class="jc-icon">🚊</div>
     <div class="jc-title">${currentName}</div>
     <div class="ride-next-row">
@@ -167,7 +246,6 @@ function renderRideCard(card) {
       <div class="ride-next-name">${nextName || '— end of line —'}</div>
     </div>
     <div class="ride-stops-remaining">${stopsRemaining} stop${stopsRemaining !== 1 ? 's' : ''} to ${destName}</div>
-    ${isMultiSegment && !card.rideIsFinalSegment ? `<div class="ride-final-dest">Final destination: ${card.rideFinalDestination}</div>` : ''}
     ${stationListHtml}
     ${nearArrival ? `
       <div class="ride-warning">⚠️ Next stop: ${destName}. Get ready.</div>
@@ -192,7 +270,6 @@ function stepKindLabel(kind) {
   if (kind === 'arrive') return 'Arrival';
   if (kind === 'exits') return 'Exits here';
   if (kind === 'warn') return 'Heads up';
-  if (kind === 'multiTransfer') return 'Transfer required';
   return '';
 }
 
@@ -261,51 +338,6 @@ function buildJourneyCards(fk, tk) {
   return { from, to, cards };
 }
 
-// ===== TEST ROUTE builder: converts TEST_ROUTE_MULTI's segments into the
-// same card sequence shape buildJourneyCards() produces, so it plugs into
-// the existing renderer/sub-stepper without touching the single-line engine.
-function buildJourneyCardsFromTestRoute(routeData) {
-  const cards = [];
-  const segs = routeData.segments;
-
-  segs.forEach((seg, segIdx) => {
-    const isLastSegment = segIdx === segs.length - 1;
-
-    cards.push({
-      kind: 'ride',
-      title: `Board ${seg.lineName}`,
-      rideStations: seg.stations,
-      rideDirection: seg.direction,
-      rideLineName: seg.lineName,
-      rideFinalDestination: routeData.finalDestination,
-      rideSegmentEnd: seg.endStation,
-      rideArrivalNote: seg.arrivalNote,
-      rideIsFinalSegment: isLastSegment,
-      rideFinalArrival: seg.finalArrival || null
-    });
-
-    if (seg.transferTo) {
-      cards.push({
-        kind: 'multiTransfer',
-        title: seg.transferTo.title,
-        transfer: seg.transferTo
-      });
-    }
-  });
-
-  return { label: routeData.label, cards };
-}
-
-function startTestRoute() {
-  const built = buildJourneyCardsFromTestRoute(TEST_ROUTE_MULTI);
-  journeyCards = built.cards;
-  journeyIndex = 0;
-  journeyTripLabel.textContent = built.label;
-  journeyScreen.classList.remove('hidden');
-  resetRideStateIfNeeded();
-  renderJourneyCard();
-}
-
 function renderJourneyCard() {
   const card = journeyCards[journeyIndex];
   if (!card) return;
@@ -314,27 +346,6 @@ function renderJourneyCard() {
 
   if (card.kind === 'ride') {
     html += renderRideCard(card);
-  } else if (card.kind === 'multiTransfer') {
-    const t = card.transfer;
-    html += `
-      <div class="jc-icon">🔀</div>
-      <div class="jc-title">${t.title}</div>
-      <div class="mt-line-row">
-        <span>${t.fromLine}</span>
-        <span class="mt-line-arrow">→</span>
-        <span>${t.toLine}</span>
-      </div>
-      ${t.warningChip ? `<div class="mt-chip">⚠️ ${t.warningChip}</div>` : ''}
-      <div class="mt-steps">
-        ${t.steps.map((s, i) => `
-          <div class="mt-step-row">
-            <span class="mt-step-num">${i + 1}</span>
-            <span class="mt-step-text">${s}</span>
-          </div>
-        `).join('')}
-      </div>
-      ${t.note ? `<div class="mt-note">${t.note}</div>` : ''}
-    `;
   } else if (card.kind === 'exits') {
     html += `
       <div class="jc-icon">${stepKindIcon(card.kind)}</div>
@@ -475,34 +486,36 @@ rideArriveBtn.addEventListener('click', () => {
   renderJourneyCard();
 });
 
-populateSelects();
+updateFieldDisplays();
 renderLineStrip();
 renderEmpty();
 
 goBtn.addEventListener('click', () => {
-  startJourney(fromSelect.value, toSelect.value);
+  if (LINE_ORDER.indexOf(selectedFrom) === -1 || LINE_ORDER.indexOf(selectedTo) === -1) {
+    results.innerHTML = `
+      <div class="empty-state">
+        <div class="display">Cross-line routing coming soon</div>
+        <div>Guidance currently only works within the Sukhumvit Line. Silom and Gold Line routing is on the way.</div>
+      </div>
+    `;
+    return;
+  }
+  startJourney(selectedFrom, selectedTo);
 });
 
-testRouteBtn.addEventListener('click', () => {
-  startTestRoute();
-});
+fromField.addEventListener('click', () => openPickerModal('from'));
+toField.addEventListener('click', () => openPickerModal('to'));
+pickerModalClose.addEventListener('click', closePickerModal);
 
-fromSelect.addEventListener('change', () => {
-  renderLineStrip();
-  results.innerHTML = '';
-  renderEmpty();
-});
-
-toSelect.addEventListener('change', () => {
-  renderLineStrip();
-  results.innerHTML = '';
-  renderEmpty();
+pickerSearchInput.addEventListener('input', () => {
+  renderPickerResults(pickerSearchInput.value);
 });
 
 swapBtn.addEventListener('click', () => {
-  const temp = fromSelect.value;
-  fromSelect.value = toSelect.value;
-  toSelect.value = temp;
+  const temp = selectedFrom;
+  selectedFrom = selectedTo;
+  selectedTo = temp;
+  updateFieldDisplays();
   renderLineStrip();
   results.innerHTML = '';
   renderEmpty();
