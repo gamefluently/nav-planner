@@ -10,6 +10,7 @@ const pickerModal = document.getElementById('pickerModal');
 const pickerSearchInput = document.getElementById('pickerSearchInput');
 const pickerModalResults = document.getElementById('pickerModalResults');
 const pickerModalClose = document.getElementById('pickerModalClose');
+const pickerModalBack = document.getElementById('pickerModalBack');
 
 // Selected station ids (ALL_STATIONS .id, shared across line entries for
 // transfer stations). Defaults match the app's original Nana -> Siam demo.
@@ -70,13 +71,16 @@ function renderEmpty() {
   `;
 }
 
-// ===== Searchable station picker modal =====
+// ===== Station picker modal: browse by line first, or search across lines =====
+
+let pickerSelectedLine = null; // null = showing line list; set = showing that line's stations
 
 function openPickerModal(field) {
   activeField = field;
+  pickerSelectedLine = null;
   pickerSearchInput.value = '';
   pickerModal.classList.remove('hidden');
-  renderPickerResults('');
+  renderPickerView();
   // Focus after the modal is visible so mobile keyboards behave.
   setTimeout(() => pickerSearchInput.focus(), 50);
 }
@@ -84,6 +88,7 @@ function openPickerModal(field) {
 function closePickerModal() {
   pickerModal.classList.add('hidden');
   activeField = null;
+  pickerSelectedLine = null;
 }
 
 function matchesQuery(station, query) {
@@ -92,7 +97,6 @@ function matchesQuery(station, query) {
   return (
     station.name.toLowerCase().includes(q) ||
     station.code.toLowerCase().includes(q) ||
-    station.line.toLowerCase().includes(q) ||
     (station.nameTh && station.nameTh.toLowerCase().includes(q))
   );
 }
@@ -103,7 +107,80 @@ function lineCssClass(line) {
   return 'line-sukhumvit';
 }
 
-function renderPickerResults(query) {
+// Decides which of the three screens to show: line list, a single line's
+// stations, or flat search results — based on current query + selected line.
+function renderPickerView() {
+  const query = pickerSearchInput.value.trim();
+
+  if (query) {
+    pickerModalBack.classList.add('hidden');
+    renderSearchResults(query);
+  } else if (pickerSelectedLine) {
+    pickerModalBack.classList.remove('hidden');
+    renderStationsForLine(pickerSelectedLine);
+  } else {
+    pickerModalBack.classList.add('hidden');
+    renderLineList();
+  }
+}
+
+function renderLineList() {
+  pickerModalResults.innerHTML = `
+    <div class="picker-screen-label">Choose a line</div>
+    ${LINE_ORDER_DISPLAY.map(lineName => {
+      const count = ALL_STATIONS.filter(s => s.line === lineName).length;
+      return `
+        <div class="picker-line-card" data-line="${lineName}">
+          <div class="picker-line-dot ${lineCssClass(lineName)}"></div>
+          <div class="picker-line-card-text">
+            <div class="picker-line-card-name">${lineName}</div>
+            <div class="picker-line-card-count">${count} stations</div>
+          </div>
+          <span class="picker-line-card-arrow">→</span>
+        </div>
+      `;
+    }).join('')}
+  `;
+
+  pickerModalResults.querySelectorAll('.picker-line-card').forEach(card => {
+    card.addEventListener('click', () => {
+      pickerSelectedLine = card.dataset.line;
+      renderPickerView();
+    });
+  });
+}
+
+function renderStationRow(s) {
+  return `
+    <div class="picker-station-row" data-id="${s.id}">
+      <span class="picker-code-badge ${lineCssClass(s.line)}">${s.code}</span>
+      <span class="picker-station-name">${s.name}</span>
+      <div class="picker-line-badges">
+        <span class="picker-line-badge">${s.line}</span>
+        ${s.transfer ? `<span class="picker-transfer-badge">⇄ ${s.transfer}</span>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function attachStationRowHandlers() {
+  pickerModalResults.querySelectorAll('.picker-station-row').forEach(row => {
+    row.addEventListener('click', () => {
+      selectStation(row.dataset.id);
+    });
+  });
+}
+
+function renderStationsForLine(lineName) {
+  const lineStations = ALL_STATIONS.filter(s => s.line === lineName);
+  pickerModalResults.innerHTML = `
+    <div class="picker-screen-label">${lineName}</div>
+    ${lineStations.map(renderStationRow).join('')}
+  `;
+  attachStationRowHandlers();
+}
+
+function renderSearchResults(query) {
   const filtered = ALL_STATIONS.filter(s => matchesQuery(s, query));
 
   if (filtered.length === 0) {
@@ -115,29 +192,12 @@ function renderPickerResults(query) {
   LINE_ORDER_DISPLAY.forEach(lineName => {
     const lineStations = filtered.filter(s => s.line === lineName);
     if (!lineStations.length) return;
-
     html += `<div class="picker-group-label">${lineName}</div>`;
-    lineStations.forEach(s => {
-      html += `
-        <div class="picker-station-row" data-id="${s.id}">
-          <span class="picker-code-badge ${lineCssClass(s.line)}">${s.code}</span>
-          <span class="picker-station-name">${s.name}</span>
-          <div class="picker-line-badges">
-            <span class="picker-line-badge">${s.line}</span>
-            ${s.transfer ? `<span class="picker-transfer-badge">⇄ ${s.transfer}</span>` : ''}
-          </div>
-        </div>
-      `;
-    });
+    html += lineStations.map(renderStationRow).join('');
   });
 
   pickerModalResults.innerHTML = html;
-
-  pickerModalResults.querySelectorAll('.picker-station-row').forEach(row => {
-    row.addEventListener('click', () => {
-      selectStation(row.dataset.id);
-    });
-  });
+  attachStationRowHandlers();
 }
 
 function selectStation(id) {
@@ -507,8 +567,13 @@ fromField.addEventListener('click', () => openPickerModal('from'));
 toField.addEventListener('click', () => openPickerModal('to'));
 pickerModalClose.addEventListener('click', closePickerModal);
 
+pickerModalBack.addEventListener('click', () => {
+  pickerSelectedLine = null;
+  renderPickerView();
+});
+
 pickerSearchInput.addEventListener('input', () => {
-  renderPickerResults(pickerSearchInput.value);
+  renderPickerView();
 });
 
 swapBtn.addEventListener('click', () => {
