@@ -392,86 +392,55 @@ window.LINE_ORDER = LINE_ORDER;
 window.SEGMENTS = SEGMENTS;
 window.getRoute = getRoute;
 
-// ===== TEST ROUTE: multi-segment journey with line transfers =====
-// Isolated from the single-line engine above — used only to prototype
-// transfer behavior across Sukhumvit -> Silom -> Gold lines.
-// Bang Na (E13) -> Siam (CEN) -> Krung Thon Buri (S7/G1) -> Charoen Nakhon (G2)
+// ===== ALL_STATIONS: cross-line dataset for the searchable picker modal =====
+// Covers Sukhumvit, Silom, and Gold lines. This is separate from STATIONS
+// above (which still only drives real Sukhumvit-line routing) — ALL_STATIONS
+// exists purely for search/browse/select in the picker UI. Transfer stations
+// (Siam, Krung Thon Buri) share one `id` across line entries so selecting
+// either still resolves to the same underlying station identity.
+const ALL_STATIONS = [
+  // Sukhumvit Line
+  { id: "siam", code: "CEN", name: "Siam", nameTh: null, line: "Sukhumvit Line", transfer: "Silom Line" },
+  { id: "chitlom", code: "E1", name: "Chit Lom", nameTh: null, line: "Sukhumvit Line" },
+  { id: "phloenchit", code: "E2", name: "Phloen Chit", nameTh: null, line: "Sukhumvit Line" },
+  { id: "nana", code: "E3", name: "Nana", nameTh: null, line: "Sukhumvit Line" },
+  { id: "asok", code: "E4", name: "Asok", nameTh: null, line: "Sukhumvit Line", transfer: "MRT Blue Line" },
+  { id: "phromphong", code: "E5", name: "Phrom Phong", nameTh: null, line: "Sukhumvit Line" },
+  { id: "thonglo", code: "E6", name: "Thong Lo", nameTh: null, line: "Sukhumvit Line" },
+  { id: "ekkamai", code: "E7", name: "Ekkamai", nameTh: null, line: "Sukhumvit Line" },
+  { id: "phrakhanong", code: "E8", name: "Phra Khanong", nameTh: null, line: "Sukhumvit Line" },
+  { id: "onnut", code: "E9", name: "On Nut", nameTh: null, line: "Sukhumvit Line" },
+  { id: "bangchak", code: "E10", name: "Bang Chak", nameTh: null, line: "Sukhumvit Line" },
+  { id: "punnawithi", code: "E11", name: "Punnawithi", nameTh: null, line: "Sukhumvit Line" },
+  { id: "udomsuk", code: "E12", name: "Udom Suk", nameTh: null, line: "Sukhumvit Line" },
+  { id: "bangna", code: "E13", name: "Bang Na", nameTh: null, line: "Sukhumvit Line" },
+  { id: "bearing", code: "E14", name: "Bearing", nameTh: null, line: "Sukhumvit Line" },
+  { id: "samrong", code: "E15", name: "Samrong", nameTh: null, line: "Sukhumvit Line", transfer: "MRT Yellow Line" },
+  { id: "puchao", code: "E16", name: "Pu Chao", nameTh: null, line: "Sukhumvit Line" },
 
-const TEST_ROUTE_MULTI = {
-  label: "Bang Na → Charoen Nakhon (test)",
-  finalDestination: "Charoen Nakhon",
-  segments: [
-    {
-      lineName: "Sukhumvit Line",
-      lineColor: "#1ba94c",
-      startStation: "Bang Na",
-      startCode: "E13",
-      endStation: "Siam",
-      endCode: "CEN",
-      direction: "Toward Mo Chit / Khu Khot",
-      stations: [
-        "Bang Na", "Udom Suk", "Punnawithi", "Bang Chak", "On Nut",
-        "Phra Khanong", "Ekkamai", "Thong Lo", "Phrom Phong", "Asok",
-        "Nana", "Phloen Chit", "Chit Lom", "Siam"
-      ],
-      arrivalNote: "Siam has covered skywalks into Paragon, Siam Discovery, and Central World — but you're transferring lines here, not exiting.",
-      transferTo: {
-        kind: "siamInterchange",
-        title: "Transfer to Silom Line",
-        fromLine: "Sukhumvit Line",
-        toLine: "Silom Line",
-        steps: [
-          "At Siam, level = direction, not line",
-          "Find the Silom Line platform",
-          "Board Silom Line toward Bang Wa"
-        ],
-        warningChip: "Level = direction, not line",
-        note: "Same direction (e.g. both northbound) is a simple cross-platform move. Switching direction means changing levels via the central stairs — you cannot just cross the platform."
-      }
-    },
-    {
-      lineName: "Silom Line",
-      lineColor: "#1ba94c",
-      startStation: "Siam",
-      startCode: "CEN",
-      endStation: "Krung Thon Buri",
-      endCode: "S7",
-      direction: "Toward Bang Wa",
-      stations: [
-        "Siam", "Ratchadamri", "Sala Daeng", "Chong Nonsi", "Saint Louis",
-        "Surasak", "Saphan Taksin", "Krung Thon Buri"
-      ],
-      arrivalNote: "Krung Thon Buri connects to the Gold Line, but it's a separate fare area — this is not a same-platform transfer.",
-      transferTo: {
-        kind: "goldLineTransfer",
-        title: "Transfer to Gold Line",
-        fromLine: "BTS Silom Line",
-        toLine: "Gold Line",
-        warningChip: "Separate fare area",
-        steps: [
-          "Exit BTS Silom Line gates",
-          "Follow signs / skywalk to Gold Line",
-          "Tap Rabbit card or buy Gold Line ticket",
-          "Board toward Khlong San"
-        ],
-        note: "Rabbit card works. Without Rabbit, buy a single-journey ticket before the Gold Line gates."
-      }
-    },
-    {
-      lineName: "Gold Line",
-      lineColor: "#f2a900",
-      startStation: "Krung Thon Buri",
-      startCode: "G1",
-      endStation: "Charoen Nakhon",
-      endCode: "G2",
-      direction: "Toward Khlong San",
-      stations: ["Krung Thon Buri", "Charoen Nakhon"],
-      arrivalNote: "Use the exit for ICONSIAM / Charoen Nakhon. You have arrived.",
-      finalArrival: {
-        exitNote: "Use exit for ICONSIAM / Charoen Nakhon"
-      }
-    }
-  ]
-};
+  // Silom Line
+  { id: "nationalstadium", code: "W1", name: "National Stadium", nameTh: null, line: "Silom Line" },
+  { id: "siam", code: "CEN", name: "Siam", nameTh: null, line: "Silom Line", transfer: "Sukhumvit Line" },
+  { id: "ratchadamri", code: "S1", name: "Ratchadamri", nameTh: null, line: "Silom Line" },
+  { id: "saladaeng", code: "S2", name: "Sala Daeng", nameTh: null, line: "Silom Line", transfer: "MRT Blue Line" },
+  { id: "chongnonsi", code: "S3", name: "Chong Nonsi", nameTh: null, line: "Silom Line" },
+  { id: "saintlouis", code: "S4", name: "Saint Louis", nameTh: null, line: "Silom Line" },
+  { id: "surasak", code: "S5", name: "Surasak", nameTh: null, line: "Silom Line" },
+  { id: "saphantaksin", code: "S6", name: "Saphan Taksin", nameTh: null, line: "Silom Line" },
+  { id: "krungthonburi", code: "S7", name: "Krung Thon Buri", nameTh: null, line: "Silom Line", transfer: "Gold Line" },
+  { id: "wongwianyai", code: "S8", name: "Wongwian Yai", nameTh: null, line: "Silom Line" },
+  { id: "phonimit", code: "S9", name: "Pho Nimit", nameTh: null, line: "Silom Line" },
+  { id: "talatphlu", code: "S10", name: "Talat Phlu", nameTh: null, line: "Silom Line" },
+  { id: "wutthakat", code: "S11", name: "Wutthakat", nameTh: null, line: "Silom Line" },
+  { id: "bangwa", code: "S12", name: "Bang Wa", nameTh: null, line: "Silom Line", transfer: "MRT Blue Line" },
 
-window.TEST_ROUTE_MULTI = TEST_ROUTE_MULTI;
+  // Gold Line
+  { id: "krungthonburi", code: "G1", name: "Krung Thon Buri", nameTh: null, line: "Gold Line", transfer: "Silom Line" },
+  { id: "charoennakhon", code: "G2", name: "Charoen Nakhon", nameTh: null, line: "Gold Line" },
+  { id: "khlongsan", code: "G3", name: "Khlong San", nameTh: null, line: "Gold Line" }
+];
+
+const LINE_ORDER_DISPLAY = ["Sukhumvit Line", "Silom Line", "Gold Line"];
+
+window.ALL_STATIONS = ALL_STATIONS;
+window.LINE_ORDER_DISPLAY = LINE_ORDER_DISPLAY;
