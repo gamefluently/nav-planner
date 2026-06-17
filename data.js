@@ -98,12 +98,160 @@ const STATIONS = {
       walkMinutes: 4,
       notes: "No direct skywalk to MRT — short street-level walk along Soi 21, mostly shaded by building overhangs. Use Exit 6 for the most direct line to MRT entrance 3."
     }
+  },
+  phromphong: {
+    name: "Phrom Phong",
+    code: "E5",
+    line: "Sukhumvit",
+    exits: [
+      { id: 1, label: "Exit 1", desc: "Sukhumvit Soi 39 side" },
+      { id: 2, label: "Exit 2", desc: "Emporium / Emporium Suites direct skywalk" },
+      { id: 5, label: "Exit 5", desc: "EmQuartier skywalk" },
+      { id: 6, label: "Exit 6", desc: "Benjasiri Park / EmSphere side" }
+    ],
+    skywalk: true,
+    skywalkNote: "Covered skywalks link Exit 2 to Emporium and Exit 5/6 to EmQuartier and EmSphere — the whole EM District is reachable without touching street level."
+  },
+  thonglo: {
+    name: "Thong Lo",
+    code: "E6",
+    line: "Sukhumvit",
+    exits: [
+      { id: 1, label: "Exit 1", desc: "Sukhumvit Soi 55 (Thonglor), bar/restaurant side" },
+      { id: 3, label: "Exit 3", desc: "Sukhumvit Soi 53 side" },
+      { id: 4, label: "Exit 4", desc: "J Avenue / residential side" }
+    ],
+    skywalk: false,
+    skywalkNote: "No major skywalk network here — Thong Lo is mostly a street-level neighborhood of bars, cafes, and condos."
+  },
+  ekkamai: {
+    name: "Ekkamai",
+    code: "E7",
+    line: "Sukhumvit",
+    exits: [
+      { id: 1, label: "Exit 1", desc: "Gateway Ekamai mall direct access" },
+      { id: 2, label: "Exit 2", desc: "Ekkamai Bus Terminal (buses to eastern Thailand)" },
+      { id: 3, label: "Exit 3", desc: "Sukhumvit Soi 63 side" }
+    ],
+    skywalk: false,
+    skywalkNote: "Exit 1 connects directly into Gateway Ekamai. The bus terminal at Exit 2 is useful if you're heading further east out of Bangkok."
+  },
+  phrakhanong: {
+    name: "Phra Khanong",
+    code: "E8",
+    line: "Sukhumvit",
+    exits: [
+      { id: 1, label: "Exit 1", desc: "Sukhumvit Soi 71 side" },
+      { id: 2, label: "Exit 2", desc: "Canal/Khlong Tan side" }
+    ],
+    skywalk: false,
+    skywalkNote: "Mostly a local residential stop, minimal skywalk coverage."
+  },
+  onnut: {
+    name: "On Nut",
+    code: "E9",
+    line: "Sukhumvit",
+    exits: [
+      { id: 1, label: "Exit 1", desc: "Tesco Lotus / market side" },
+      { id: 3, label: "Exit 3", desc: "Sukhumvit Soi 77 side" },
+      { id: 4, label: "Exit 4", desc: "Residential / On Nut market side" }
+    ],
+    skywalk: false,
+    skywalkNote: "Busy local hub with a market and Tesco Lotus near Exit 1, but no extended skywalk network."
+  },
+  bangchak: {
+    name: "Bang Chak",
+    code: "E10",
+    line: "Sukhumvit",
+    exits: [
+      { id: 1, label: "Exit 1", desc: "Sukhumvit Soi 101 side" },
+      { id: 2, label: "Exit 2", desc: "Residential / local side" }
+    ],
+    skywalk: false,
+    skywalkNote: "Quiet residential stop, street-level access only."
+  },
+  punnawithi: {
+    name: "Punnawithi",
+    code: "E11",
+    line: "Sukhumvit",
+    exits: [
+      { id: 1, label: "Exit 1", desc: "Sukhumvit Soi 101/1 side" },
+      { id: 2, label: "Exit 2", desc: "Local market / residential side" }
+    ],
+    skywalk: false,
+    skywalkNote: "Street-level access, mostly residential surroundings."
+  },
+  udomsuk: {
+    name: "Udom Suk",
+    code: "E12",
+    line: "Sukhumvit",
+    exits: [
+      { id: 1, label: "Exit 1", desc: "Sukhumvit Soi 103 side" },
+      { id: 4, label: "Exit 4", desc: "Local market side" }
+    ],
+    skywalk: false,
+    skywalkNote: "Local neighborhood stop, street-level access."
+  },
+  bangna: {
+    name: "Bang Na",
+    code: "E13",
+    line: "Sukhumvit",
+    exits: [
+      { id: 1, label: "Exit 1", desc: "Central Bangna direct access" },
+      { id: 2, label: "Exit 2", desc: "Bang Na Intersection / expressway side" }
+    ],
+    skywalk: true,
+    skywalkNote: "Skywalk connects toward Central Bangna shopping mall."
+  },
+  bearing: {
+    name: "Bearing",
+    code: "E14",
+    line: "Sukhumvit",
+    exits: [
+      { id: 1, label: "Exit 1", desc: "Sukhumvit Soi 105 side" },
+      { id: 2, label: "Exit 2", desc: "Towards Samut Prakan / expressway side" }
+    ],
+    skywalk: false,
+    skywalkNote: "Marks the start of the eastern extension toward Samut Prakan — mostly street-level from here on."
+  },
+  samrong: {
+    name: "Samrong",
+    code: "E15",
+    line: "Sukhumvit",
+    exits: [
+      { id: 1, label: "Exit 1", desc: "Towards MRT Yellow Line entrance" },
+      { id: 2, label: "Exit 2", desc: "Local market / Big C side" }
+    ],
+    skywalk: false,
+    skywalkNote: "Functional interchange station, mostly utilitarian with local shops nearby.",
+    transfer: {
+      to: "MRT Yellow Line",
+      via: "Exit 1",
+      walkMinutes: 3,
+      notes: "Short walkway connects to the MRT Yellow Line, but it's a separate ticketing system — you'll need to tap out and buy a new fare or tap a fresh card entry, even with the same Rabbit Card. No combined fare exists."
+    }
+  },
+  puchao: {
+    name: "Pu Chao",
+    code: "E16",
+    line: "Sukhumvit",
+    exits: [
+      { id: 1, label: "Exit 1", desc: "Pu Chao Saming Phrai Rd side" },
+      { id: 2, label: "Exit 2", desc: "Residential / local soi side" }
+    ],
+    skywalk: false,
+    skywalkNote: "Quiet residential station in Samut Prakan, street-level access only."
   }
 };
 
 // Order of stations north → south along the Sukhumvit Line.
 // Insert new station keys here in correct position as the network grows.
-const LINE_ORDER = ["siam", "chitlom", "phloenchit", "nana", "asok"];
+const LINE_ORDER = [
+  "siam", "chitlom", "phloenchit", "nana", "asok",
+  "phromphong", "thonglo", "ekkamai", "phrakhanong", "onnut",
+  "bangchak", "punnawithi", "udomsuk", "bangna", "bearing",
+  "samrong", "puchao"
+];
 
 // Walking segments between ADJACENT stations only (the custom data layer
 // OSM won't have). Longer routes are summed automatically.
@@ -115,7 +263,31 @@ const SEGMENTS = [
   { from: "phloenchit", to: "nana", distanceKm: 1.0, walkMinutes: 12, coveredPercent: 15,
     notes: "Mostly street-level along Sukhumvit Rd.", recommendTrain: false },
   { from: "nana", to: "asok", distanceKm: 1.1, walkMinutes: 14, coveredPercent: 20,
-    notes: "Mostly street-level along Sukhumvit Rd. Some shop awnings but no continuous skywalk. Better to take the train one stop unless you want the walk.", recommendTrain: true }
+    notes: "Mostly street-level along Sukhumvit Rd. Some shop awnings but no continuous skywalk. Better to take the train one stop unless you want the walk.", recommendTrain: true },
+  { from: "asok", to: "phromphong", distanceKm: 1.2, walkMinutes: 15, coveredPercent: 15,
+    notes: "Long stretch along Sukhumvit Rd, mostly street-level. Take the train.", recommendTrain: true },
+  { from: "phromphong", to: "thonglo", distanceKm: 1.0, walkMinutes: 13, coveredPercent: 10,
+    notes: "Street-level, busy road. Take the train.", recommendTrain: true },
+  { from: "thonglo", to: "ekkamai", distanceKm: 0.9, walkMinutes: 11, coveredPercent: 10,
+    notes: "Short hop, mostly street-level.", recommendTrain: true },
+  { from: "ekkamai", to: "phrakhanong", distanceKm: 1.1, walkMinutes: 14, coveredPercent: 5,
+    notes: "Street-level, less pedestrian infrastructure this far out. Take the train.", recommendTrain: true },
+  { from: "phrakhanong", to: "onnut", distanceKm: 1.0, walkMinutes: 13, coveredPercent: 5,
+    notes: "Street-level. Take the train.", recommendTrain: true },
+  { from: "onnut", to: "bangchak", distanceKm: 1.2, walkMinutes: 15, coveredPercent: 5,
+    notes: "Long stretch, street-level. Take the train.", recommendTrain: true },
+  { from: "bangchak", to: "punnawithi", distanceKm: 1.0, walkMinutes: 13, coveredPercent: 5,
+    notes: "Street-level. Take the train.", recommendTrain: true },
+  { from: "punnawithi", to: "udomsuk", distanceKm: 1.1, walkMinutes: 14, coveredPercent: 5,
+    notes: "Street-level. Take the train.", recommendTrain: true },
+  { from: "udomsuk", to: "bangna", distanceKm: 1.3, walkMinutes: 16, coveredPercent: 10,
+    notes: "Long stretch toward the expressway. Take the train.", recommendTrain: true },
+  { from: "bangna", to: "bearing", distanceKm: 1.2, walkMinutes: 15, coveredPercent: 5,
+    notes: "Street-level, near the expressway. Take the train.", recommendTrain: true },
+  { from: "bearing", to: "samrong", distanceKm: 1.4, walkMinutes: 18, coveredPercent: 5,
+    notes: "Long stretch into Samut Prakan. Take the train.", recommendTrain: true },
+  { from: "samrong", to: "puchao", distanceKm: 1.3, walkMinutes: 16, coveredPercent: 5,
+    notes: "Street-level, residential stretch. Take the train.", recommendTrain: true }
 ];
 
 function getSegment(aKey, bKey) {
