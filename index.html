@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%230a0e17%22/><circle cx=%2250%22 cy=%2250%22 r=%2228%22 fill=%22none%22 stroke=%22%231ba94c%22 stroke-width=%228%22/></svg>">
+<title>Skywalk — BTS Pedestrian Nav</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #1a2332;
+    --surface-2: #222e42;
+    --green: #1ba94c;
+    --green-dim: #14793a;
+    --gold: #f2a900;
+    --text: #e8eaed;
+    --text-dim: #8b96a8;
+    --text-faint: #5a6478;
+    --red: #ff4d4d;
+    --border: #2a3850;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    height: 100%;
+  }
+
+  body { padding-bottom: env(safe-area-inset-bottom); }
+
+  .display {
+    font-family: 'Archivo', 'Inter', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  header {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  header .title-block .eyebrow {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--green);
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  header h1 {
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .version-badge {
+    font-family: 'Archivo', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-faint);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    border-radius: 100px;
+    letter-spacing: 0.02em;
+  }
+
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px 20px 20px;
+  }
+
+  /* Unified line picker — the signature interaction */
+  .picker-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 16px 14px;
+    margin-bottom: 14px;
+  }
+
+  .picker-readout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    min-height: 30px;
+  }
+
+  .readout-stop {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .readout-code {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+  }
+
+  .readout-name {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+
+  .readout-placeholder {
+    font-size: 13px;
+    color: var(--text-faint);
+    font-style: italic;
+  }
+
+  .readout-arrow {
+    color: var(--text-faint);
+    font-size: 14px;
+    flex-shrink: 0;
+    padding: 0 8px;
+  }
+
+  .line-strip {
+    display: flex;
+    align-items: flex-start;
+    overflow-x: auto;
+    padding: 4px 6px 6px;
+    margin: 0 -6px;
+  }
+
+  .line-strip::-webkit-scrollbar { display: none; }
+
+  .strip-stop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 62px;
+    position: relative;
+    cursor: pointer;
+    padding-top: 13px;
+  }
+
+  .strip-track {
+    position: absolute;
+    top: 13px;
+    left: -31px;
+    width: 62px;
+    height: 3px;
+    background: var(--border);
+    z-index: 0;
+    transition: background 0.15s ease;
+  }
+
+  .strip-stop:first-child .strip-track { display: none; }
+
+  .strip-track.in-range { background: var(--green); }
+
+  .strip-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 3px solid var(--border);
+    z-index: 1;
+    margin-bottom: 7px;
+    transition: all 0.15s ease;
+    position: relative;
+    top: -13px;
+  }
+
+  .strip-stop.interchange .strip-dot { width: 15px; height: 15px; top: -14px; }
+  .strip-stop.on-route .strip-dot { border-color: var(--green); }
+  .strip-stop.interchange.on-route .strip-dot { border-color: var(--gold); }
+
+  .strip-stop.selected .strip-dot {
+    background: var(--green);
+    border-color: var(--green);
+    box-shadow: 0 0 0 4px rgba(27, 169, 76, 0.2);
+  }
+
+  .strip-stop.interchange.selected .strip-dot {
+    background: var(--gold);
+    border-color: var(--gold);
+    box-shadow: 0 0 0 4px rgba(242, 169, 0, 0.2);
+  }
+
+  .strip-code {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--text-faint);
+    margin-top: -9px;
+    transition: color 0.15s ease;
+  }
+
+  .strip-stop.on-route .strip-code { color: var(--text); }
+  .strip-stop.selected .strip-code { color: var(--green); }
+  .strip-stop.interchange.selected .strip-code { color: var(--gold); }
+
+  .strip-name {
+    font-size: 9.5px;
+    color: var(--text-faint);
+    text-align: center;
+    margin-top: 1px;
+    line-height: 1.2;
+  }
+
+  .strip-stop.on-route .strip-name { color: var(--text-dim); }
+
+  .strip-hint {
+    font-size: 11px;
+    color: var(--text-faint);
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  .go-btn {
+    width: 100%;
+    background: var(--green);
+    color: #051208;
+    border: none;
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    padding: 15px;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: opacity 0.15s ease;
+  }
+  .go-btn:active { transform: scale(0.98); }
+  .go-btn:disabled { background: var(--surface-2); color: var(--text-faint); cursor: not-allowed; }
+
+  /* Hero "what to do right now" card */
+  .next-up {
+    background: linear-gradient(135deg, rgba(27, 169, 76, 0.18), rgba(27, 169, 76, 0.05));
+    border: 1px solid var(--green);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  .next-up-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--green);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .next-up-title {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 19px;
+    margin-bottom: 5px;
+    line-height: 1.15;
+  }
+
+  .next-up-detail {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    line-height: 1.45;
+  }
+
+  /* Urgent warning banner */
+  .warn-banner {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: rgba(255, 77, 77, 0.1);
+    border: 1px solid rgba(255, 77, 77, 0.4);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+
+  .warn-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    line-height: 1;
+    margin-top: 1px;
+  }
+
+  .warn-title {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 14.5px;
+    color: var(--red);
+    margin-bottom: 3px;
+  }
+
+  .warn-detail {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  /* Journey line — renamed from route-line, same mechanic */
+  .journey-line {
+    position: relative;
+    padding-left: 26px;
+    margin-bottom: 20px;
+  }
+
+  .journey-line::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    background: var(--green);
+    border-radius: 2px;
+  }
+
+  .step.quiet {
+    padding-bottom: 16px;
+    opacity: 0.7;
+  }
+
+  .step.quiet::before {
+    width: 8px;
+    height: 8px;
+    left: -23.5px;
+    top: 4px;
+    border-width: 2px;
+    border-color: var(--text-faint);
+  }
+
+  .step.quiet .step-detail {
+    font-size: 12.5px;
+    color: var(--text-faint);
+  }
+
+  .step.arrive::before {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  /* Exits card — local knowledge, the core value of the app */
+  .exits-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .exits-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--green);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .exit-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .exit-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .exit-row:first-child { padding-top: 0; }
+
+  .exit-num {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    color: var(--bg);
+    background: var(--green);
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .exit-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.4;
+    padding-top: 1px;
+  }
+
+  .step-title {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 3px;
+  }
+
+  .step.transfer .step-title { color: var(--gold); }
+
+  .step-detail {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.45;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 5px 11px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+
+  .pill.primary {
+    color: var(--green);
+    border-color: var(--green);
+    background: rgba(27, 169, 76, 0.1);
+    font-weight: 700;
+  }
+
+  .pill.advisory {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(242, 169, 0, 0.1);
+    font-weight: 700;
+  }
+
+  /* Siam interchange diagram */
+  .interchange-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .interchange-card .label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+
+  .ic-headline {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+
+  .levels {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .level-row { padding: 11px 13px; border-bottom: 1px solid var(--border); }
+  .level-row:last-child { border-bottom: none; }
+
+  .level-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+
+  .level-row .level-tag {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    background: var(--surface-2);
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+
+  .level-row.upper .level-tag { color: var(--green); }
+  .level-row.lower .level-tag { color: var(--gold); }
+
+  .level-dir { font-weight: 700; font-size: 12px; }
+  .level-row.upper .level-dir { color: var(--green); }
+  .level-row.lower .level-dir { color: var(--gold); }
+
+  .level-row p { font-size: 11.5px; color: var(--text-dim); line-height: 1.4; }
+
+  .key-rule {
+    background: rgba(255, 77, 77, 0.08);
+    border: 1px solid rgba(255, 77, 77, 0.3);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #ffb3b3;
+  }
+
+  .empty-state { text-align: center; padding: 36px 20px 20px; color: var(--text-dim); }
+  .empty-state .display { font-size: 17px; color: var(--text); margin-bottom: 5px; }
+  .empty-state div:last-child { font-size: 13px; }
+
+  footer {
+    text-align: center;
+    padding: 18px 20px 32px;
+    font-size: 11.5px;
+    color: var(--text-faint);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <div class="eyebrow">Your Bangkok skywalk guide</div>
+    <h1 class="display">Skywalk</h1>
+  </div>
+  <div class="version-badge">v0.6</div>
+</header>
+
+<main>
+  <div class="picker-card">
+    <div class="picker-readout" id="pickerReadout"></div>
+    <div class="line-strip" id="lineStrip"></div>
+    <div class="strip-hint">Tap where you are, then where you're going</div>
+  </div>
+
+  <button class="go-btn" id="goBtn" disabled>GUIDE ME</button>
+
+  <div id="results"></div>
+</main>
+
+<footer>Siam · Chit Lom · Phloen Chit · Nana · Asok — built for personal use</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
