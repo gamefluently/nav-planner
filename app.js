@@ -74,6 +74,7 @@ const rideSubstepper = document.getElementById('rideSubstepper');
 const ridePrevBtn = document.getElementById('ridePrevBtn');
 const rideNextBtn = document.getElementById('rideNextBtn');
 const rideArriveBtn = document.getElementById('rideArriveBtn');
+const testRouteBtn = document.getElementById('testRouteBtn');
 
 let journeyCards = [];
 let journeyIndex = 0;
@@ -90,10 +91,23 @@ function renderRideCard(card) {
   const currentName = stations[rideStationIndex];
   const nextName = stations[rideStationIndex + 1] || null;
   const destName = stations[destIdx];
+  const isMultiSegment = !!card.rideLineName;
 
   // Arrival state takes over the whole card once we reach the destination.
   if (rideArrived) {
-    const card2 = journeyCards[journeyIndex];
+    // Final segment of a multi-segment test route gets the true final-arrival card.
+    if (isMultiSegment && card.rideIsFinalSegment) {
+      const exitNote = card.rideFinalArrival ? card.rideFinalArrival.exitNote : 'Check exits';
+      return `
+        <div class="jc-icon">🛑</div>
+        <div class="jc-title" style="color:var(--green);">GET OFF NOW</div>
+        <div class="ride-arrival-row">
+          <div class="ride-arrival-chip">${exitNote}</div>
+        </div>
+        <div class="jc-detail" style="margin-top:14px;">You have arrived at <strong style="color:var(--text);">${destName}</strong>.</div>
+      `;
+    }
+
     const exitsCard = journeyCards.find(c => c.kind === 'exits');
     const firstExit = exitsCard && exitsCard.exits && exitsCard.exits[0];
     return `
@@ -145,14 +159,15 @@ function renderRideCard(card) {
   const nearArrival = stopsRemaining === 1;
 
   return `
+    ${isMultiSegment ? `<div class="ride-direction">${card.rideLineName} · ${card.rideDirection}</div>` : `<div class="ride-direction">${card.rideDirection}</div>`}
     <div class="jc-icon">🚊</div>
-    <div class="ride-direction">${card.rideDirection}</div>
     <div class="jc-title">${currentName}</div>
     <div class="ride-next-row">
       <div class="ride-next-label">Next</div>
       <div class="ride-next-name">${nextName || '— end of line —'}</div>
     </div>
     <div class="ride-stops-remaining">${stopsRemaining} stop${stopsRemaining !== 1 ? 's' : ''} to ${destName}</div>
+    ${isMultiSegment && !card.rideIsFinalSegment ? `<div class="ride-final-dest">Final destination: ${card.rideFinalDestination}</div>` : ''}
     ${stationListHtml}
     ${nearArrival ? `
       <div class="ride-warning">⚠️ Next stop: ${destName}. Get ready.</div>
@@ -177,6 +192,7 @@ function stepKindLabel(kind) {
   if (kind === 'arrive') return 'Arrival';
   if (kind === 'exits') return 'Exits here';
   if (kind === 'warn') return 'Heads up';
+  if (kind === 'multiTransfer') return 'Transfer required';
   return '';
 }
 
@@ -245,6 +261,51 @@ function buildJourneyCards(fk, tk) {
   return { from, to, cards };
 }
 
+// ===== TEST ROUTE builder: converts TEST_ROUTE_MULTI's segments into the
+// same card sequence shape buildJourneyCards() produces, so it plugs into
+// the existing renderer/sub-stepper without touching the single-line engine.
+function buildJourneyCardsFromTestRoute(routeData) {
+  const cards = [];
+  const segs = routeData.segments;
+
+  segs.forEach((seg, segIdx) => {
+    const isLastSegment = segIdx === segs.length - 1;
+
+    cards.push({
+      kind: 'ride',
+      title: `Board ${seg.lineName}`,
+      rideStations: seg.stations,
+      rideDirection: seg.direction,
+      rideLineName: seg.lineName,
+      rideFinalDestination: routeData.finalDestination,
+      rideSegmentEnd: seg.endStation,
+      rideArrivalNote: seg.arrivalNote,
+      rideIsFinalSegment: isLastSegment,
+      rideFinalArrival: seg.finalArrival || null
+    });
+
+    if (seg.transferTo) {
+      cards.push({
+        kind: 'multiTransfer',
+        title: seg.transferTo.title,
+        transfer: seg.transferTo
+      });
+    }
+  });
+
+  return { label: routeData.label, cards };
+}
+
+function startTestRoute() {
+  const built = buildJourneyCardsFromTestRoute(TEST_ROUTE_MULTI);
+  journeyCards = built.cards;
+  journeyIndex = 0;
+  journeyTripLabel.textContent = built.label;
+  journeyScreen.classList.remove('hidden');
+  resetRideStateIfNeeded();
+  renderJourneyCard();
+}
+
 function renderJourneyCard() {
   const card = journeyCards[journeyIndex];
   if (!card) return;
@@ -253,6 +314,27 @@ function renderJourneyCard() {
 
   if (card.kind === 'ride') {
     html += renderRideCard(card);
+  } else if (card.kind === 'multiTransfer') {
+    const t = card.transfer;
+    html += `
+      <div class="jc-icon">🔀</div>
+      <div class="jc-title">${t.title}</div>
+      <div class="mt-line-row">
+        <span>${t.fromLine}</span>
+        <span class="mt-line-arrow">→</span>
+        <span>${t.toLine}</span>
+      </div>
+      ${t.warningChip ? `<div class="mt-chip">⚠️ ${t.warningChip}</div>` : ''}
+      <div class="mt-steps">
+        ${t.steps.map((s, i) => `
+          <div class="mt-step-row">
+            <span class="mt-step-num">${i + 1}</span>
+            <span class="mt-step-text">${s}</span>
+          </div>
+        `).join('')}
+      </div>
+      ${t.note ? `<div class="mt-note">${t.note}</div>` : ''}
+    `;
   } else if (card.kind === 'exits') {
     html += `
       <div class="jc-icon">${stepKindIcon(card.kind)}</div>
@@ -399,6 +481,10 @@ renderEmpty();
 
 goBtn.addEventListener('click', () => {
   startJourney(fromSelect.value, toSelect.value);
+});
+
+testRouteBtn.addEventListener('click', () => {
+  startTestRoute();
 });
 
 fromSelect.addEventListener('change', () => {
