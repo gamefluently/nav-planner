@@ -398,6 +398,51 @@ function buildJourneyCards(fk, tk) {
   return { from, to, cards };
 }
 
+// Converts getMultiLineRoute()'s {legs, transfers} into the same flat card
+// sequence shape the renderer already understands — a 'ride' card per leg,
+// a 'transfer' card inserted between legs that need one.
+function buildMultiLineJourneyCards(fromId, toId) {
+  const route = getMultiLineRoute(fromId, toId);
+  if (!route) return null;
+
+  const cards = [];
+  route.legs.forEach((leg, i) => {
+    cards.push({
+      kind: 'ride',
+      title: `Board ${leg.lineName}`,
+      rideStations: leg.stations,
+      rideDirection: `Toward ${leg.toName}`,
+      rideLineName: leg.lineName
+    });
+
+    // A transfer card sits between this leg and the next, if one exists
+    // for the station this leg ends at.
+    const transfer = route.transfers.find(t => t.stationId === leg.toId);
+    if (transfer && i < route.legs.length - 1) {
+      cards.push({
+        kind: 'transfer',
+        title: transfer.title,
+        detail: transfer.detail
+      });
+    }
+  });
+
+  const lastLeg = route.legs[route.legs.length - 1];
+  return {
+    fromLabel: `${stationDisplayNameSafe(fromId).code}`,
+    toLabel: `${stationDisplayNameSafe(toId).code}`,
+    cards
+  };
+}
+
+// Mirrors data.js's stationDisplayName fallback so the UI layer can label
+// the trip even for stations without a full STATIONS entry yet.
+function stationDisplayNameSafe(id) {
+  if (STATIONS[id]) return { name: STATIONS[id].name, code: STATIONS[id].code };
+  const entry = ALL_STATIONS.find(s => s.id === id);
+  return entry ? { name: entry.name, code: entry.code } : { name: id, code: '?' };
+}
+
 function renderJourneyCard() {
   const card = journeyCards[journeyIndex];
   if (!card) return;
@@ -477,12 +522,32 @@ function renderProgressRail() {
 
 function startJourney(fk, tk) {
   if (fk === tk) return;
-  const built = buildJourneyCards(fk, tk);
-  if (!built) return;
 
-  journeyCards = built.cards;
-  journeyIndex = 0;
-  journeyTripLabel.textContent = `${built.from.code} → ${built.to.code}`;
+  // Prefer the real single-line engine when both stations are on Sukhumvit
+  // (it has richer per-station detail). Otherwise use the cross-line router.
+  const bothSukhumvit = LINE_ORDER.indexOf(fk) !== -1 && LINE_ORDER.indexOf(tk) !== -1;
+
+  if (bothSukhumvit) {
+    const built = buildJourneyCards(fk, tk);
+    if (!built) return;
+    journeyCards = built.cards;
+    journeyIndex = 0;
+    journeyTripLabel.textContent = `${built.from.code} → ${built.to.code}`;
+  } else {
+    const built = buildMultiLineJourneyCards(fk, tk);
+    if (!built) {
+      results.innerHTML = `
+        <div class="empty-state">
+          <div class="display">Route not available in this prototype</div>
+        </div>
+      `;
+      return;
+    }
+    journeyCards = built.cards;
+    journeyIndex = 0;
+    journeyTripLabel.textContent = `${built.fromLabel} → ${built.toLabel}`;
+  }
+
   journeyScreen.classList.remove('hidden');
   resetRideStateIfNeeded();
   renderJourneyCard();
@@ -551,11 +616,11 @@ renderLineStrip();
 renderEmpty();
 
 goBtn.addEventListener('click', () => {
-  if (LINE_ORDER.indexOf(selectedFrom) === -1 || LINE_ORDER.indexOf(selectedTo) === -1) {
+  if (selectedFrom === selectedTo) {
     results.innerHTML = `
       <div class="empty-state">
-        <div class="display">Cross-line routing coming soon</div>
-        <div>Guidance currently only works within the Sukhumvit Line. Silom and Gold Line routing is on the way.</div>
+        <div class="display">Same station selected</div>
+        <div>Pick two different stations to get guidance.</div>
       </div>
     `;
     return;
