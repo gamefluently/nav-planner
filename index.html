@@ -284,6 +284,20 @@
   .go-btn:active { transform: scale(0.98); }
   .go-btn:disabled { background: var(--surface-2); color: var(--text-faint); cursor: not-allowed; }
 
+  .test-route-btn {
+    width: 100%;
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-faint);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+  .test-route-btn:active { transform: scale(0.98); }
+
   /* Hero "what to do right now" card */
   .next-up {
     background: linear-gradient(135deg, rgba(27, 169, 76, 0.18), rgba(27, 169, 76, 0.05));
@@ -660,6 +674,7 @@
   .jc-kind.kind-start { color: var(--green); }
   .jc-kind.kind-exits { color: var(--green); }
   .jc-kind.kind-warn { color: var(--red); }
+  .jc-kind.kind-multiTransfer { color: var(--gold); }
 
   .jc-icon {
     font-size: 34px;
@@ -816,6 +831,14 @@
     color: var(--green);
     font-weight: 700;
     margin-bottom: 16px;
+  }
+
+  .ride-final-dest {
+    font-size: 12px;
+    color: var(--text-faint);
+    font-weight: 600;
+    margin-bottom: 12px;
+    margin-top: -10px;
   }
 
   /* Compact full-list view (≤5 stops) */
@@ -981,6 +1004,83 @@
   .sub-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .sub-btn.arrive { color: var(--green); border-color: var(--green); }
 
+  /* Multi-segment transfer card (test route) */
+  .mt-chip {
+    display: inline-block;
+    background: rgba(255, 77, 77, 0.12);
+    border: 1px solid rgba(255, 77, 77, 0.4);
+    color: #ffb3b3;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 100px;
+    margin-bottom: 16px;
+  }
+
+  .mt-line-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  .mt-line-arrow { color: var(--text-faint); }
+
+  .mt-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .mt-step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+
+  .mt-step-num {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--bg);
+    background: var(--green);
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .mt-step-text {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 600;
+    line-height: 1.4;
+    padding-top: 1px;
+  }
+
+  .mt-note {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.45;
+  }
+
+  .mt-note strong { color: var(--text); }
+
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
@@ -1007,6 +1107,8 @@
   </div>
 
   <button class="go-btn" id="goBtn">GUIDE ME</button>
+
+  <button class="test-route-btn" id="testRouteBtn">🧪 TEST: Bang Na → Charoen Nakhon (multi-transfer)</button>
 
   <div id="results"></div>
 </main>
