@@ -195,6 +195,19 @@ function renderRoute(fk, tk) {
     `;
   }
 
+  // Other-line transfer note (MRT, etc.) — easy to get caught out by separate ticketing.
+  if (to.transfer) {
+    html += `
+      <div class="warn-banner">
+        <span class="warn-icon">⚠</span>
+        <div>
+          <div class="warn-title">Connecting to ${to.transfer.to}?</div>
+          <div class="warn-detail">${to.transfer.notes}</div>
+        </div>
+      </div>
+    `;
+  }
+
   if (from.interchange) html += renderInterchangeDiagram(from);
   if (to.interchange && fk !== 'siam') html += renderInterchangeDiagram(to);
 
