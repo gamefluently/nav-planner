@@ -142,18 +142,163 @@
     margin-bottom: 16px;
   }
 
-  select {
+  .picker-field {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+  }
+  .picker-field:active { transform: scale(0.98); }
+
+  .picker-field-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .picker-field-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .picker-field-value.placeholder {
+    color: var(--text-faint);
+    font-weight: 600;
+  }
+
+  /* ===== Searchable station picker modal ===== */
+  .picker-modal {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .picker-modal.hidden { display: none; }
+
+  .picker-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .picker-search-input {
     flex: 1;
     background: var(--surface-2);
     border: 1px solid var(--border);
     color: var(--text);
     font-family: 'Inter', sans-serif;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
-    padding: 13px 12px;
+    padding: 12px 14px;
     border-radius: 10px;
-    appearance: none;
-    -webkit-appearance: none;
+  }
+
+  .picker-search-input::placeholder { color: var(--text-faint); font-weight: 500; }
+
+  .picker-modal-close {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 16px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .picker-modal-results {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 16px 24px;
+  }
+
+  .picker-group-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--text-faint);
+    padding: 16px 4px 8px;
+  }
+
+  .picker-group-label:first-child { padding-top: 12px; }
+
+  .picker-station-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .picker-station-row:active { background: var(--surface); }
+
+  .picker-code-badge {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    color: var(--bg);
+    background: var(--green);
+    padding: 5px 9px;
+    border-radius: 7px;
+    flex-shrink: 0;
+    min-width: 38px;
+    text-align: center;
+  }
+
+  .picker-station-row.line-silom .picker-code-badge,
+  .picker-code-badge.line-silom { background: var(--gold); color: var(--bg); }
+
+  .picker-station-name {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .picker-line-badges {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .picker-line-badge {
+    font-size: 11px;
+    color: var(--text-faint);
+    font-weight: 600;
+  }
+
+  .picker-transfer-badge {
+    font-size: 10.5px;
+    color: var(--gold);
+    font-weight: 700;
+    background: rgba(242, 169, 0, 0.12);
+    padding: 2px 7px;
+    border-radius: 100px;
+  }
+
+  .picker-no-results {
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 13px;
+    padding: 40px 20px;
   }
 
   .swap-btn {
@@ -283,20 +428,6 @@
   }
   .go-btn:active { transform: scale(0.98); }
   .go-btn:disabled { background: var(--surface-2); color: var(--text-faint); cursor: not-allowed; }
-
-  .test-route-btn {
-    width: 100%;
-    background: none;
-    border: 1px dashed var(--border);
-    color: var(--text-faint);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 10px;
-    border-radius: 10px;
-    cursor: pointer;
-    margin-bottom: 20px;
-  }
-  .test-route-btn:active { transform: scale(0.98); }
 
   /* Hero "what to do right now" card */
   .next-up {
@@ -674,7 +805,6 @@
   .jc-kind.kind-start { color: var(--green); }
   .jc-kind.kind-exits { color: var(--green); }
   .jc-kind.kind-warn { color: var(--red); }
-  .jc-kind.kind-multiTransfer { color: var(--gold); }
 
   .jc-icon {
     font-size: 34px;
@@ -831,14 +961,6 @@
     color: var(--green);
     font-weight: 700;
     margin-bottom: 16px;
-  }
-
-  .ride-final-dest {
-    font-size: 12px;
-    color: var(--text-faint);
-    font-weight: 600;
-    margin-bottom: 12px;
-    margin-top: -10px;
   }
 
   /* Compact full-list view (≤5 stops) */
@@ -1004,83 +1126,6 @@
   .sub-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .sub-btn.arrive { color: var(--green); border-color: var(--green); }
 
-  /* Multi-segment transfer card (test route) */
-  .mt-chip {
-    display: inline-block;
-    background: rgba(255, 77, 77, 0.12);
-    border: 1px solid rgba(255, 77, 77, 0.4);
-    color: #ffb3b3;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 6px 12px;
-    border-radius: 100px;
-    margin-bottom: 16px;
-  }
-
-  .mt-line-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--text-dim);
-    font-weight: 600;
-    margin-bottom: 14px;
-  }
-
-  .mt-line-arrow { color: var(--text-faint); }
-
-  .mt-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-
-  .mt-step-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-  }
-
-  .mt-step-num {
-    font-family: 'Archivo', sans-serif;
-    font-weight: 800;
-    font-size: 13px;
-    color: var(--bg);
-    background: var(--green);
-    width: 22px;
-    height: 22px;
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .mt-step-text {
-    font-size: 14px;
-    color: var(--text);
-    font-weight: 600;
-    line-height: 1.4;
-    padding-top: 1px;
-  }
-
-  .mt-note {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    font-size: 13px;
-    color: var(--text-dim);
-    line-height: 1.45;
-  }
-
-  .mt-note strong { color: var(--text); }
-
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
@@ -1099,21 +1144,34 @@
 <main>
   <div class="picker-card">
     <div class="picker">
-      <select id="fromSelect"></select>
+      <div class="picker-field" id="fromField" data-active="from">
+        <div class="picker-field-label">From</div>
+        <div class="picker-field-value" id="fromFieldValue">Select station</div>
+      </div>
       <div class="swap-btn" id="swapBtn">⇄</div>
-      <select id="toSelect"></select>
+      <div class="picker-field" id="toField" data-active="to">
+        <div class="picker-field-label">To</div>
+        <div class="picker-field-value" id="toFieldValue">Select station</div>
+      </div>
     </div>
     <div class="line-strip" id="lineStrip"></div>
   </div>
 
   <button class="go-btn" id="goBtn">GUIDE ME</button>
 
-  <button class="test-route-btn" id="testRouteBtn">🧪 TEST: Bang Na → Charoen Nakhon (multi-transfer)</button>
-
   <div id="results"></div>
 </main>
 
 <footer>Siam · Chit Lom · Phloen Chit · Nana · Asok · Phrom Phong · Thong Lo · Ekkamai · Phra Khanong · On Nut · Bang Chak · Punnawithi · Udom Suk · Bang Na · Bearing · Samrong · Pu Chao — built for personal use</footer>
+
+<!-- Searchable station picker modal -->
+<div class="picker-modal hidden" id="pickerModal">
+  <div class="picker-modal-header">
+    <input type="text" class="picker-search-input" id="pickerSearchInput" placeholder="Search station, code, or line" autocomplete="off">
+    <button class="picker-modal-close" id="pickerModalClose">✕</button>
+  </div>
+  <div class="picker-modal-results" id="pickerModalResults"></div>
+</div>
 
 <!-- Journey mode: full-screen step-by-step guidance, hidden until GUIDE ME is tapped -->
 <div class="journey-screen hidden" id="journeyScreen">
