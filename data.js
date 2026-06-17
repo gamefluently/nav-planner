@@ -422,6 +422,158 @@ window.LINE_ORDER = LINE_ORDER;
 window.SEGMENTS = SEGMENTS;
 window.getRoute = getRoute;
 
+// ===== Cross-line routing (prototype) =====
+// Hardcoded, not a general pathfinder. Only two transfer points exist in
+// this prototype, and only the five cases below are considered valid.
+// Anything outside those returns null so the UI can show
+// "Route not available in this prototype."
+
+const SILOM_LINE_ORDER = [
+  "nationalstadium", "siam", "ratchadamri", "saladaeng", "chongnonsi",
+  "saintlouis", "surasak", "saphantaksin", "krungthonburi",
+  "wongwianyai", "phonimit", "talatphlu", "wutthakat", "bangwa"
+];
+
+const GOLD_LINE_ORDER = ["krungthonburi", "charoennakhon", "khlongsan"];
+
+// Which display line a station id belongs to. Krung Thon Buri and Siam
+// exist on two lines each — for routing purposes we resolve that based on
+// which line is relevant to the leg being calculated, not a fixed mapping.
+function linesForStation(id) {
+  const lines = [];
+  if (LINE_ORDER.includes(id)) lines.push("Sukhumvit Line");
+  if (SILOM_LINE_ORDER.includes(id)) lines.push("Silom Line");
+  if (GOLD_LINE_ORDER.includes(id)) lines.push("Gold Line");
+  return lines;
+}
+
+// The only two transfer points permitted in this prototype.
+const TRANSFER_RULES = {
+  siam: { connects: ["Sukhumvit Line", "Silom Line"] },
+  krungthonburi: { connects: ["Silom Line", "Gold Line"] }
+};
+
+function orderForLine(lineName) {
+  if (lineName === "Sukhumvit Line") return LINE_ORDER;
+  if (lineName === "Silom Line") return SILOM_LINE_ORDER;
+  if (lineName === "Gold Line") return GOLD_LINE_ORDER;
+  return null;
+}
+
+function stationDisplayName(id) {
+  // Stations may not exist in STATIONS yet (e.g. most Silom stops) — fall
+  // back to ALL_STATIONS for name/code so routing still works structurally
+  // ahead of full station detail being filled in.
+  if (STATIONS[id]) return { name: STATIONS[id].name, code: STATIONS[id].code };
+  const entry = ALL_STATIONS.find(s => s.id === id);
+  return entry ? { name: entry.name, code: entry.code } : { name: id, code: "?" };
+}
+
+// Builds a single same-line leg as a simple object — direction text is left
+// generic since intermediate-station detail beyond Sukhumvit isn't filled
+// in yet; this is structural plumbing for the prototype, not turn-by-turn
+// copy for Silom/Gold yet.
+function buildLeg(lineName, fromId, toId) {
+  const order = orderForLine(lineName);
+  if (!order) return null;
+  const fromIdx = order.indexOf(fromId);
+  const toIdx = order.indexOf(toId);
+  if (fromIdx === -1 || toIdx === -1) return null;
+
+  const lo = Math.min(fromIdx, toIdx);
+  const hi = Math.max(fromIdx, toIdx);
+  const stations = order.slice(lo, hi + 1).map(id => stationDisplayName(id).name);
+  const reversed = toIdx < fromIdx;
+
+  return {
+    lineName,
+    fromId, toId,
+    fromName: stationDisplayName(fromId).name,
+    fromCode: stationDisplayName(fromId).code,
+    toName: stationDisplayName(toId).name,
+    toCode: stationDisplayName(toId).code,
+    numStops: Math.abs(toIdx - fromIdx),
+    stations: reversed ? stations.slice().reverse() : stations
+  };
+}
+
+function buildTransferCard(stationId) {
+  const rule = TRANSFER_RULES[stationId];
+  const name = stationDisplayName(stationId).name;
+  return {
+    stationId,
+    stationName: name,
+    connects: rule.connects,
+    title: `Transfer at ${name}`,
+    detail: `Change between ${rule.connects[0]} and ${rule.connects[1]} here.`
+  };
+}
+
+// Returns { legs: [...], transfers: [...] } or null if no valid route
+// exists under this prototype's hardcoded rules.
+function getMultiLineRoute(fromId, toId) {
+  if (fromId === toId) return null;
+
+  const fromLines = linesForStation(fromId);
+  const toLines = linesForStation(toId);
+  if (!fromLines.length || !toLines.length) return null;
+
+  // Case 1: same line is reachable directly without any transfer —
+  // check this first regardless of what other lines either station touches.
+  const sharedLine = fromLines.find(l => toLines.includes(l));
+  if (sharedLine) {
+    const leg = buildLeg(sharedLine, fromId, toId);
+    if (!leg) return null;
+    return { legs: [leg], transfers: [] };
+  }
+
+  const fromIsSukhumvit = fromLines.includes("Sukhumvit Line");
+  const fromIsSilom = fromLines.includes("Silom Line");
+  const toIsSilom = toLines.includes("Silom Line");
+  const toIsGold = toLines.includes("Gold Line");
+
+  // Case 2: Sukhumvit -> Silom, via Siam.
+  if (fromIsSukhumvit && toIsSilom) {
+    const leg1 = buildLeg("Sukhumvit Line", fromId, "siam");
+    const leg2 = buildLeg("Silom Line", "siam", toId);
+    if (!leg2) return null;
+    const legs = (leg1 && leg1.numStops > 0) ? [leg1, leg2] : [leg2];
+    const transfers = legs.length > 1 ? [buildTransferCard("siam")] : [];
+    return { legs, transfers };
+  }
+
+  // Case 3: Sukhumvit -> Gold, via Siam then Krung Thon Buri.
+  if (fromIsSukhumvit && toIsGold) {
+    const leg1 = buildLeg("Sukhumvit Line", fromId, "siam");
+    const leg2 = buildLeg("Silom Line", "siam", "krungthonburi");
+    const leg3 = buildLeg("Gold Line", "krungthonburi", toId);
+    if (!leg2 || !leg3) return null;
+    const legs = [];
+    const transfers = [];
+    if (leg1 && leg1.numStops > 0) { legs.push(leg1); transfers.push(buildTransferCard("siam")); }
+    legs.push(leg2);
+    transfers.push(buildTransferCard("krungthonburi"));
+    legs.push(leg3);
+    return { legs, transfers };
+  }
+
+  // Case 4: Silom -> Gold, via Krung Thon Buri.
+  if (fromIsSilom && toIsGold) {
+    const leg1 = buildLeg("Silom Line", fromId, "krungthonburi");
+    const leg2 = buildLeg("Gold Line", "krungthonburi", toId);
+    if (!leg2) return null;
+    const legs = (leg1 && leg1.numStops > 0) ? [leg1, leg2] : [leg2];
+    const transfers = legs.length > 1 ? [buildTransferCard("krungthonburi")] : [];
+    return { legs, transfers };
+  }
+
+  // Anything else (e.g. Gold -> Sukhumvit, Gold -> Silom going the "wrong"
+  // way through rules not defined above) is not supported in this prototype.
+  return null;
+}
+
+window.getMultiLineRoute = getMultiLineRoute;
+
 // ===== ALL_STATIONS: cross-line dataset for the searchable picker modal =====
 // Covers Sukhumvit, Silom, and Gold lines. This is separate from STATIONS
 // above (which still only drives real Sukhumvit-line routing) — ALL_STATIONS
