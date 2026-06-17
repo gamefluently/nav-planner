@@ -135,11 +135,48 @@
     padding: 0 8px;
   }
 
+  .picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  select {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 13px 12px;
+    border-radius: 10px;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .swap-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--gold);
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    font-size: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .swap-btn:active { transform: scale(0.94); }
+
   .line-strip {
     display: flex;
     align-items: flex-start;
     overflow-x: auto;
-    padding: 4px 6px 6px;
+    padding: 4px 6px 2px;
     margin: 0 -6px;
   }
 
@@ -150,9 +187,8 @@
     flex-direction: column;
     align-items: center;
     flex-shrink: 0;
-    width: 62px;
+    width: 56px;
     position: relative;
-    cursor: pointer;
     padding-top: 13px;
   }
 
@@ -528,6 +564,224 @@
     color: var(--text-faint);
   }
 
+  /* ===== Journey mode — full-screen step-by-step guidance ===== */
+  .journey-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .journey-screen.hidden { display: none; }
+
+  .journey-top {
+    padding: 14px 18px 10px;
+    flex-shrink: 0;
+  }
+
+  .journey-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .journey-end-btn {
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 4px;
+    cursor: pointer;
+  }
+
+  .journey-trip-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-align: right;
+  }
+
+  /* Progress rail — dots connected by a track, current step highlighted */
+  .progress-rail {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .progress-dot {
+    height: 4px;
+    flex: 1;
+    background: var(--border);
+    border-radius: 100px;
+    transition: background 0.2s ease;
+  }
+
+  .progress-dot.done { background: var(--green); }
+  .progress-dot.current { background: var(--gold); }
+
+  .journey-progress-label {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  /* The card itself — fills remaining space, content vertically centered */
+  .journey-card-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 22px;
+    overflow-y: auto;
+  }
+
+  .journey-card {
+    width: 100%;
+  }
+
+  .jc-kind {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  .jc-kind.kind-ride { color: var(--text-faint); }
+  .jc-kind.kind-transfer { color: var(--gold); }
+  .jc-kind.kind-arrive { color: var(--green); }
+  .jc-kind.kind-start { color: var(--green); }
+  .jc-kind.kind-exits { color: var(--green); }
+  .jc-kind.kind-warn { color: var(--red); }
+
+  .jc-icon {
+    font-size: 34px;
+    margin-bottom: 16px;
+    line-height: 1;
+  }
+
+  .jc-title {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 27px;
+    line-height: 1.15;
+    margin-bottom: 14px;
+    letter-spacing: -0.01em;
+  }
+
+  .jc-detail {
+    font-size: 16px;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+
+  .jc-card.warn-card .jc-title { color: var(--red); }
+
+  /* Exits list rendered inside a card */
+  .jc-exit-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .jc-exit-row:last-child { border-bottom: none; }
+
+  .jc-exit-num {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--bg);
+    background: var(--green);
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .jc-exit-desc {
+    font-size: 15px;
+    color: var(--text-dim);
+    line-height: 1.4;
+    padding-top: 2px;
+  }
+
+  /* Interchange mini-card rendered inside a journey card */
+  .jc-levels {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  .jc-level-row { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .jc-level-row:last-child { border-bottom: none; }
+  .jc-level-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .jc-level-tag {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    background: var(--surface-2);
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .jc-level-row.upper .jc-level-tag, .jc-level-row.upper .jc-level-dir { color: var(--green); }
+  .jc-level-row.lower .jc-level-tag, .jc-level-row.lower .jc-level-dir { color: var(--gold); }
+  .jc-level-dir { font-weight: 700; font-size: 12px; }
+  .jc-level-row p { font-size: 12.5px; color: var(--text-dim); line-height: 1.4; }
+
+  /* Bottom nav controls */
+  .journey-nav {
+    display: flex;
+    gap: 10px;
+    padding: 14px 18px 18px;
+    flex-shrink: 0;
+  }
+
+  .nav-btn {
+    flex: 1;
+    padding: 16px;
+    border-radius: 12px;
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+
+  .nav-btn:active { transform: scale(0.97); }
+
+  .nav-btn.prev {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    flex: 0 0 110px;
+  }
+
+  .nav-btn.next {
+    background: var(--green);
+    color: #051208;
+  }
+
+  .nav-btn.next.finish {
+    background: var(--green);
+  }
+
+  .nav-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
@@ -540,22 +794,46 @@
     <div class="eyebrow">Your Bangkok skywalk guide</div>
     <h1 class="display">Skywalk</h1>
   </div>
-  <div class="version-badge">v0.6</div>
+  <div class="version-badge">v0.7</div>
 </header>
 
 <main>
   <div class="picker-card">
-    <div class="picker-readout" id="pickerReadout"></div>
+    <div class="picker">
+      <select id="fromSelect"></select>
+      <div class="swap-btn" id="swapBtn">⇄</div>
+      <select id="toSelect"></select>
+    </div>
     <div class="line-strip" id="lineStrip"></div>
-    <div class="strip-hint">Tap where you are, then where you're going</div>
   </div>
 
-  <button class="go-btn" id="goBtn" disabled>GUIDE ME</button>
+  <button class="go-btn" id="goBtn">GUIDE ME</button>
 
   <div id="results"></div>
 </main>
 
-<footer>Siam · Chit Lom · Phloen Chit · Nana · Asok — built for personal use</footer>
+<footer>Siam · Chit Lom · Phloen Chit · Nana · Asok · Phrom Phong · Thong Lo · Ekkamai · Phra Khanong · On Nut · Bang Chak · Punnawithi · Udom Suk · Bang Na · Bearing · Samrong · Pu Chao — built for personal use</footer>
+
+<!-- Journey mode: full-screen step-by-step guidance, hidden until GUIDE ME is tapped -->
+<div class="journey-screen hidden" id="journeyScreen">
+  <div class="journey-top">
+    <div class="journey-top-row">
+      <button class="journey-end-btn" id="journeyEndBtn">✕ End</button>
+      <div class="journey-trip-label" id="journeyTripLabel"></div>
+    </div>
+    <div class="progress-rail" id="progressRail"></div>
+    <div class="journey-progress-label" id="journeyProgressLabel"></div>
+  </div>
+
+  <div class="journey-card-wrap">
+    <div class="journey-card" id="journeyCard"></div>
+  </div>
+
+  <div class="journey-nav">
+    <button class="nav-btn prev" id="prevBtn">← Back</button>
+    <button class="nav-btn next" id="nextBtn">Next →</button>
+  </div>
+</div>
 
 <script src="data.js"></script>
 <script src="app.js"></script>
